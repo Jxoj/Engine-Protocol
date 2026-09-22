@@ -1,0 +1,10 @@
+{
+  "name": "engine-protocol",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "pnpm --dir sj start",
+    "lint": "pnpm --dir sj lint"
+  },
+  "packageManager": "pnpm@10.18.3"
+}

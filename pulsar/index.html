@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulsar Browser</title>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+    :root { --ink:#f1f5f4; --muted:#95a4a5; --faint:#657274; --line:rgba(221,244,239,.12); --panel:rgba(16,27,30,.72); --panel-strong:#132428; --teal:#80e1cc; --teal-deep:#236b69; --orange:#ffb77d; --shadow:0 24px 80px rgba(0,0,0,.32); color-scheme:dark; }
+    * { box-sizing:border-box; }
+    html, body { height:100%; margin:0; }
+    body { overflow:hidden; color:var(--ink); font-family:Manrope, sans-serif; background:#081114; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; background:radial-gradient(800px 500px at 13% -8%,#245d5e 0,transparent 62%), radial-gradient(700px 600px at 98% 110%,#372d35 0,transparent 62%), linear-gradient(130deg,#081114,#101a1d 52%,#111317); }
+    button, input { font:inherit; color:inherit; }
+    button { border:0; cursor:pointer; }
+    .app { position:relative; display:grid; grid-template-columns:272px minmax(0,1fr); height:100%; }
+    .rail { display:flex; flex-direction:column; min-width:0; padding:18px 12px 14px; border-right:1px solid var(--line); background:linear-gradient(150deg,rgba(30,54,57,.64),rgba(9,17,20,.72)); backdrop-filter:blur(28px); }
+    .identity { display:flex; align-items:center; gap:11px; padding:0 9px 20px; }
+    .logo { display:grid; place-items:center; width:34px; height:34px; border:1px solid rgba(197,255,242,.4); border-radius:11px; color:#09201f; background:linear-gradient(145deg,#c4fff0,#5fcbb9); box-shadow:0 8px 22px rgba(55,187,166,.26); }
+    .identity strong { display:block; letter-spacing:-.03em; font-size:17px; }
+    .identity small { display:block; margin-top:2px; color:var(--muted); font:11px 'DM Mono',monospace; letter-spacing:.05em; text-transform:uppercase; }
+    .new-tab { display:flex; align-items:center; gap:10px; width:100%; padding:12px 13px; border:1px solid rgba(128,225,204,.28); border-radius:12px; color:#09201f; font-weight:700; background:var(--teal); box-shadow:0 10px 26px rgba(40,153,135,.18); transition:transform .18s,background .18s; }
+    .new-tab:hover { transform:translateY(-1px); background:#a0f0df; }
+    .section-label { display:flex; align-items:center; justify-content:space-between; margin:19px 9px 8px; color:var(--faint); font:500 10px 'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+    .section-label span:last-child { color:var(--teal); }
+    .filter { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; outline:0; color:var(--ink); background:rgba(0,0,0,.18); font-size:12px; }
+    .filter:focus, .address:focus, .setting-input:focus { border-color:rgba(128,225,204,.62); box-shadow:0 0 0 3px rgba(128,225,204,.09); }
+    .tabs { display:grid; gap:4px; overflow:auto; }
+    .tab { display:flex; align-items:center; gap:10px; min-width:0; padding:10px 9px; border:1px solid transparent; border-radius:11px; color:var(--muted); text-align:left; background:transparent; transition:background .16s,border .16s,color .16s; }
+    .tab:hover { color:var(--ink); background:rgba(255,255,255,.05); }
+    .tab.active { color:var(--ink); border-color:rgba(128,225,204,.28); background:linear-gradient(100deg,rgba(128,225,204,.16),rgba(128,225,204,.035)); }
+    .tab-icon { display:grid; flex:none; place-items:center; width:27px; height:27px; border-radius:8px; color:var(--teal); background:rgba(128,225,204,.1); }
+    .tab-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+    .tab-close { flex:none; color:var(--faint); opacity:0; background:transparent; }
+    .tab:hover .tab-close, .tab.active .tab-close { opacity:1; }
+    .tab-close:hover { color:#ff9e9e; }
+    .rail-footer { display:flex; align-items:center; gap:8px; margin-top:auto; padding:13px 9px 0; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:var(--orange); box-shadow:0 0 10px var(--orange); }
+    .status-dot.online { background:var(--teal); box-shadow:0 0 10px var(--teal); }
+    .rail-footer span:nth-child(2) { flex:1; }
+    .settings-link { padding:4px; color:var(--muted); background:transparent; }
+    .settings-link:hover { color:var(--ink); }
+    .workspace { position:relative; min-width:0; }
+    .topbar { display:flex; align-items:center; gap:7px; height:60px; padding:11px 18px; border-bottom:1px solid var(--line); background:rgba(5,13,15,.35); backdrop-filter:blur(20px); }
+    .nav-btn { display:grid; place-items:center; width:34px; height:34px; border:1px solid transparent; border-radius:9px; color:var(--muted); background:transparent; }
+    .nav-btn:hover:not(:disabled) { color:var(--ink); border-color:var(--line); background:rgba(255,255,255,.07); }
+    .nav-btn:disabled { opacity:.3; cursor:default; }
+    .address-wrap { position:relative; flex:1; min-width:0; }
+    .address-icon { position:absolute; top:50%; left:13px; color:var(--faint); transform:translateY(-50%); }
+    .address { width:100%; height:40px; padding:0 16px 0 39px; border:1px solid var(--line); border-radius:11px; outline:0; color:var(--ink); background:rgba(0,0,0,.2); font:12px 'DM Mono',monospace; transition:border .16s,box-shadow .16s; }
+    .address::placeholder { color:var(--faint); }
+    .toolbar-side { display:flex; gap:3px; }
+    .content { position:absolute; inset:60px 0 0; overflow:auto; }
+    .browser-frame { width:100%; height:100%; border:0; background:#fff; }
+    .welcome { display:flex; justify-content:center; padding:clamp(38px,7vh,72px) 28px 42px; }
+    .welcome-inner { width:min(860px,100%); }
+    .eyebrow { display:flex; align-items:center; gap:9px; margin:0 0 18px; color:var(--teal); font:500 11px 'DM Mono',monospace; letter-spacing:.12em; text-transform:uppercase; }
+    .eyebrow::before { content:""; width:28px; height:1px; background:var(--teal); }
+    h1 { max-width:700px; margin:0; color:#f6fbf9; font-size:clamp(34px,5vw,66px); line-height:1.02; letter-spacing:-.07em; }
+    .intro { max-width:580px; margin:17px 0 0; color:var(--muted); font-size:14px; line-height:1.65; }
+    .quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:37px; }
+    .quick-card { min-height:132px; padding:17px; border:1px solid var(--line); border-radius:14px; color:var(--muted); text-align:left; background:rgba(15,29,32,.58); transition:transform .18s,border .18s,background .18s; }
+    .quick-card:hover { transform:translateY(-3px); border-color:rgba(128,225,204,.36); background:rgba(27,53,55,.7); }
+    .quick-card svg { margin-bottom:21px; color:var(--teal); }
+    .quick-card strong { display:block; margin-bottom:5px; color:var(--ink); font-size:13px; }
+    .quick-card span { font-size:11px; line-height:1.5; }
+    .settings { width:min(640px,calc(100% - 40px)); margin:7vh auto; padding:25px; border:1px solid var(--line); border-radius:16px; background:var(--panel); box-shadow:var(--shadow); }
+    .settings h2 { margin:0 0 9px; font-size:25px; letter-spacing:-.04em; }
+    .settings p { color:var(--muted); font-size:13px; line-height:1.6; }
+    .setting-label { display:block; margin:26px 0 7px; color:var(--faint); font:500 10px 'DM Mono',monospace; letter-spacing:.1em; text-transform:uppercase; }
+    .setting-input { width:100%; height:42px; padding:0 12px; border:1px solid var(--line); border-radius:10px; outline:0; background:rgba(0,0,0,.2); font:12px 'DM Mono',monospace; }
+    .setting-actions { display:flex; align-items:center; gap:14px; margin-top:16px; }
+    .verify { padding:10px 15px; border-radius:9px; color:#09201f; font-weight:700; background:var(--teal); }
+    .result { margin:0; }
+    .result.ok { color:var(--teal); }
+    .result.error { color:#ffaaa3; }
+    @media (max-width:760px) { .app { grid-template-columns:1fr; } .rail { position:absolute; z-index:5; width:min(290px,86vw); height:100%; transform:translateX(-100%); transition:transform .2s; } .rail.open { transform:translateX(0); } .topbar { padding:12px; } .quick-grid { grid-template-columns:1fr; margin-top:35px; } .welcome { padding:55px 20px; } .start-row { flex-direction:column; } .start-button { justify-content:center; height:46px; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="rail" id="rail">
+      <div class="identity"><span class="logo"><i data-lucide="orbit"></i></span><div><strong>Pulsar</strong><small>Engine workspace</small></div></div>
+      <button class="new-tab" id="new-tab"><i data-lucide="plus"></i> Open new tab</button>
+      <div class="section-label"><span>Open pages</span><span id="tab-count">0</span></div>
+      <input class="filter" id="tab-filter" placeholder="Filter pages" autocomplete="off">
+      <div class="tabs" id="tabs"></div>
+      <div class="rail-footer"><span class="status-dot" id="status-dot"></span><span id="status-text">Checking engine</span><button class="settings-link" id="settings-link" title="Engine settings"><i data-lucide="sliders-horizontal"></i></button></div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar">
+        <button class="nav-btn" id="menu" title="Show tabs"><i data-lucide="panel-left"></i></button>
+        <button class="nav-btn" id="back" title="Back"><i data-lucide="arrow-left"></i></button>
+        <button class="nav-btn" id="forward" title="Forward"><i data-lucide="arrow-right"></i></button>
+        <button class="nav-btn" id="reload" title="Reload"><i data-lucide="refresh-cw"></i></button>
+        <div class="address-wrap"><i class="address-icon" data-lucide="lock-keyhole"></i><input class="address" id="address" placeholder="Search or enter a URL" autocomplete="off"></div>
+        <div class="toolbar-side"><button class="nav-btn" id="fullscreen" title="Fullscreen"><i data-lucide="maximize"></i></button></div>
+      </header>
+      <div class="content" id="content"></div>
+    </section>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    const defaultEndpoint = location.port === '4141'
+      ? `${location.origin}/api/engine`
+      : `${location.protocol}//${location.hostname}:4141/api/engine`;
+    const savedEndpoint = localStorage.pulsarEndpoint;
+    const savedIsLocal = savedEndpoint && /:\/\/(localhost|127\.0\.0\.1)(:\d+)?\b/i.test(savedEndpoint);
+    const state = { endpoint: savedEndpoint && !(savedIsLocal && !/^(localhost|127\.0\.0\.1)$/i.test(location.hostname)) ? savedEndpoint : defaultEndpoint, instance: null, tabs: [], active: null };
+    const api = async (path, options = {}) => { const response = await fetch(state.endpoint.replace(/\/$/, '') + path, { ...options, headers: { 'content-type':'application/json', ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw Error(data.error || response.statusText); return data; };
+    const normalize = value => { const input = value.trim(); if (!input) return ''; return /^https?:\/\//i.test(input) ? input : input.includes('.') ? `https://${input}` : `https://www.google.com/search?q=${encodeURIComponent(input)}`; };
+    const active = () => state.tabs.find(tab => tab.id === state.active);
+    const icons = () => window.lucide?.createIcons();
+    function renderTabs() { const filter = $('tab-filter').value.toLowerCase(); const tabs = state.tabs.filter(tab => tab.label.toLowerCase().includes(filter)); $('tab-count').textContent = state.tabs.length; $('tabs').innerHTML = tabs.length ? tabs.map(tab => `<button class="tab ${tab.id === state.active ? 'active' : ''}" data-id="${tab.id}"><span class="tab-icon"><i data-lucide="globe-2"></i></span><span class="tab-title">${tab.label}</span><span class="tab-close" data-close="${tab.id}"><i data-lucide="x"></i></span></button>`).join('') : '<p style="padding:12px 9px;color:var(--faint);font-size:11px">No pages open</p>'; $('tabs').querySelectorAll('[data-id]').forEach(row => row.onclick = event => { if (event.target.closest('[data-close]')) return closeTab(row.dataset.id); select(row.dataset.id); }); $('address').value = active()?.url || ''; updateNav(); icons(); }
+    function updateNav() { const tab = active(); $('back').disabled = !tab || tab.historyIndex <= 0; $('forward').disabled = !tab || tab.historyIndex >= tab.history.length - 1; }
+    function renderWelcome() { $('content').innerHTML = `<div class="welcome"><div class="welcome-inner"><p class="eyebrow">Private browsing workspace</p><h1>Go somewhere<br><span style="color:var(--teal)">interesting.</span></h1><p class="intro">Enter a URL in the address bar above. Pulsar gives every page its own tab and session, with Scramjet handling the connection quietly underneath.</p><div class="quick-grid"><button class="quick-card" data-url="https://github.com"><i data-lucide="code-2"></i><strong>GitHub</strong><span>Explore projects and repositories</span></button><button class="quick-card" data-url="https://wikipedia.org"><i data-lucide="book-open"></i><strong>Wikipedia</strong><span>Open a clean reference session</span></button><button class="quick-card" data-url="https://news.ycombinator.com"><i data-lucide="newspaper"></i><strong>Hacker News</strong><span>See what the web is discussing</span></button></div></div></div>`; document.querySelectorAll('[data-url]').forEach(card => card.onclick = () => open(card.dataset.url)); $('address').focus(); icons(); }
+    function showTab(tab) { $('content').innerHTML = tab ? `<iframe class="browser-frame" src="${tab.iframeUrl}" allow="fullscreen; clipboard-write" referrerpolicy="no-referrer"></iframe>` : ''; }
+    function select(id) { state.active = id; renderTabs(); showTab(active()); }
+    function closeTab(id) { const index = state.tabs.findIndex(tab => tab.id === id); if (index < 0) return; state.tabs.splice(index, 1); if (state.active === id) state.active = state.tabs[index]?.id || state.tabs[index - 1]?.id || null; state.active ? select(state.active) : (renderTabs(), renderWelcome()); }
+    async function open(value) { const url = normalize(value); if (!url) return; try { if (!state.instance) state.instance = (await api('/instances', { method:'POST', body:JSON.stringify({ appId:'pulsar' }) })).instanceId; const current = active(); const result = current ? await api(`/instances/${state.instance}/tabs/${current.engineId}`, { method:'PATCH', body:JSON.stringify({ url }) }) : await api(`/instances/${state.instance}/tabs`, { method:'POST', body:JSON.stringify({ url }) }); const tab = result.tab; const item = { ...tab, engineId:tab.id, label:new URL(tab.url).hostname }; if (current) Object.assign(current, item); else { state.tabs.push(item); state.active = item.id; } select(state.active); } catch (error) { setStatus(error.message, false); showSettings(); } }
+    function setStatus(message, online) { $('status-text').textContent = message; $('status-dot').classList.toggle('online', online); }
+    function showSettings() { $('content').innerHTML = `<div class="settings"><p class="eyebrow">Connection</p><h2>Engine Protocol</h2><p>Pulsar needs a live Scramjet endpoint to open proxied pages. This is the address the browser uses to create instances and tabs.</p><label class="setting-label" for="endpoint">Backend endpoint</label><input class="setting-input" id="endpoint" value="${state.endpoint}"><div class="setting-actions"><button class="verify" id="verify">Verify connection</button><p class="result" id="result"></p></div></div>`; $('verify').onclick = async () => { const endpoint = $('endpoint').value.trim().replace(/\/$/, ''); $('result').textContent = 'Checking...'; try { const response = await fetch(endpoint + '/health'); if (!response.ok) throw Error('Endpoint returned an error'); state.endpoint = endpoint; localStorage.pulsarEndpoint = endpoint; setStatus('Engine connected', true); $('result').textContent = 'Connected and ready'; $('result').className = 'result ok'; } catch (error) { setStatus('Engine unavailable', false); $('result').textContent = error.message; $('result').className = 'result error'; } }; }
+    $('new-tab').onclick = () => { state.active = null; renderTabs(); renderWelcome(); }; $('tab-filter').oninput = renderTabs; $('settings-link').onclick = showSettings; $('address').onkeydown = event => { if (event.key === 'Enter') open(event.target.value); }; $('reload').onclick = () => { const frame = document.querySelector('.browser-frame'); if (frame) frame.src = frame.src; }; $('back').onclick = () => { const tab = active(); if (tab?.historyIndex > 0) open(tab.history[tab.historyIndex - 1]); }; $('forward').onclick = () => { const tab = active(); if (tab && tab.historyIndex < tab.history.length - 1) open(tab.history[tab.historyIndex + 1]); }; $('fullscreen').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.(); $('menu').onclick = () => $('rail').classList.toggle('open');
+    renderTabs(); renderWelcome(); icons(); fetch(state.endpoint + '/health').then(response => { if (!response.ok) throw Error(); setStatus('Engine connected', true); }).catch(() => setStatus('Engine unavailable', false));
+  </script>
+</body>
+</html>
